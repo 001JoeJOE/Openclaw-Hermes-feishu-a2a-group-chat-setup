@@ -310,8 +310,8 @@ profiles:
         app_id: cli_a9f8b2c3d4e5
         app_secret: "your_app_secret"
         allowed_users:
-          - ou_be4c93b136a20606ead4af144a55fd29
-          - ou_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+          - ou_xxxxx  # 用户
+          - ou_yyyyy  # 另一个 Bot
 ```
 
 ### OpenClaw Gateway（Windows）
@@ -321,7 +321,7 @@ profiles:
   "feishu": {
     "appId": "cli_a9f8b2c3d4e5",
     "appSecret": "your_app_secret",
-    "allowedUsers": ["ou_be4c93b136a20606ead4af144a55fd29", "ou_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"]
+    "allowedUsers": ["ou_xxxxx", "ou_yyyyy"]
   }
 }
 ```
@@ -334,8 +334,8 @@ feishu:
   app_id: cli_a9f8b2c3d4e5
   app_secret: "your_app_secret"
   allowed_users:
-    - ou_be4c93b136a20606ead4af144a55fd29
-    - ou_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+    - ou_xxxxx
+    - ou_yyyyy
 ```
 
 ---
@@ -423,7 +423,6 @@ hermes gateway --profile my-agent --log-level debug
 
 ## 相关资源
 
-- [飞书开放平台文档](https://open.feishu.cn/document/)
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
 - [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的网关
 - [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）

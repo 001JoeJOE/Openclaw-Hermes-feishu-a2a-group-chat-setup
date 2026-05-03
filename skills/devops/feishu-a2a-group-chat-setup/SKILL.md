@@ -56,20 +56,18 @@ metadata:
 
 让用户打开飞书开发者后台 → 找到对应的 Bot 应用 → **权限管理 → 添加权限**，确认以下权限全部开启：
 
-| 权限 | 作用 | 必要程度 |
-|------|------|----------|
-| `im:message` | 收发消息基础权限 | ✅ 必须 |
-| `im:message:group_at_msg` | **接收群 @消息** | ✅ **关键——最容易遗漏** |
-| `im:message:send_as_bot` | 以 Bot 身份发送消息 | ✅ 必须 |
-| `im:message:msg_preview` | 消息预览 | ✅ 推荐 |
-| `im:chat:readonly` | 读取群信息、成员列表 | ✅ 排查必备 |
-| `im:resource` | 下载图片、文件等资源 | ✅ 收发文件时必需 |
-| `im:message.p2p_msg` | 接收单聊消息（私信） | ✅ 必须 |
-| `im:message.group_msg` | 接收群聊消息 | ✅ 必须 |
-| `contact:contact:readonly` | 读取通讯录信息 | ✅ 获取 open_id 时需要 |
+| 权限（API 名） | 飞书后台显示名称 | 作用 | 必要程度 |
+|---|---|---|---|
+| `im:message` | —（根权限，自动覆盖子权限） | 收发消息基础权限 | ✅ 必须 |
+| `im:message:group_at_msg` | **获取用户在群中@机器人的消息** | **接收群 @消息** | ✅ **关键——最容易遗漏** |
+| `im:message:send_as_bot` | **以应用的身份发送消息** | 以 Bot 身份发送消息 | ✅ 必须 |
+| `im:message:msg_preview` | **获取用户回复类消息预览** | 消息预览 | ✅ 推荐 |
+| `im:chat:readonly` | **获取单聊/群聊信息** | 读取群信息、成员列表 | ✅ 排查必备 |
+| `im:resource` | **获取消息中的资源文件** | 下载图片、文件等资源 | ✅ 收发文件时需要 |
+| `contact:contact:readonly` | **获取通讯录信息** | 读取通讯录 | ✅ 获取 open_id 时需要 |
 
 **⚠️ 关键提醒告诉用户：**
-- `im:message:group_at_msg` **不是** `im:message` 的子权限，必须**手动额外添加**
+- **`im:message:group_at_msg`** 不是 `im:message` 的子权限，必须**手动额外添加**。在飞书后台搜索「群」或「@」就能找到「获取用户在群中@机器人的消息」
 - 添加权限后，必须**发布新版本**（应用版本管理 → 创建版本 → 申请发布）才能在生产环境生效
 - 测试环境（沙箱模式）下权限即时生效，无需发布
 - **以上权限对所有 Bot 框架（Hermes/OpenClaw/Claude-bridge）都一样**
@@ -263,8 +261,8 @@ curl -H "Authorization: Bearer <tenant_access_token>" \
 确认消息已到达飞书服务器。如果 API 返回空或报错，说明消息根本没发出来，和 Bot 配置无关。
 
 ### 第 2 步：飞书开发者后台检查权限
-- `im:message:group_at_msg` 是否开启？
-- `im.message.receive_v1` 事件是否订阅？
+- **「获取用户在群中@机器人的消息」**（`im:message:group_at_msg`）是否开启？
+- **「接收群聊消息」**（`im.message.receive_v1`）事件是否订阅？
 - 权限修改后是否**发布了新版本**？
 
 ### 第 3 步：查看目标 Bot 的框架日志
@@ -321,8 +319,8 @@ curl -H "Authorization: Bearer <tenant_access_token>" \
 
 ## Common Pitfalls
 
-1. **`im:message:group_at_msg` 没开。** 飞书侧直接过滤群 @消息，所有框架的日志都毫无记录。
-   - 解法：权限管理 → 添加权限 → 搜 `group_at_msg` → 选中 → 发布新版本
+1. **「获取用户在群中@机器人的消息」（`im:message:group_at_msg`）没开。** 飞书侧直接过滤群 @消息，所有框架的日志都毫无记录。
+   - 解法：权限管理 → 添加权限 → 搜索「群」或「@」→ 勾选「获取用户在群中@机器人的消息」→ 发布新版本
 
 2. **跨 App 提取 Bot open_id。** 从另一个 Bot 收到的 @mention 日志里提取，填到配置文件里，结果群消息全部被策略拒绝。
    - 解法：用 `bot/v3/info` API 获取真实 open_id
@@ -350,8 +348,8 @@ curl -H "Authorization: Bearer <tenant_access_token>" \
 
 配置完成后按以下列表验证：
 
-- [ ] 飞书开发者后台 → `im:message:group_at_msg` 已开启
-- [ ] 飞书开发者后台 → 事件订阅 → `im.message.receive_v1` 已订阅
+- [ ] 飞书开发者后台 → **「获取用户在群中@机器人的消息」**（`im:message:group_at_msg`）已开启
+- [ ] 飞书开发者后台 → 事件订阅 → **「接收群聊消息」**（`im.message.receive_v1`）已订阅
 - [ ] 权限修改后已**发布新版本**
 - [ ] Bot 已添加到目标群
 - [ ] Bot open_id 来自 `bot/v3/info` API（非跨 App 提取）

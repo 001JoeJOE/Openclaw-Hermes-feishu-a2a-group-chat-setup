@@ -425,5 +425,5 @@ hermes gateway --profile my-agent --log-level debug
 
 - [飞书开放平台文档](https://open.feishu.cn/document/)
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
-- [OpenClaw 文档](https://github.com/nicepkg/openclaw)
-- [feishu-claude-bridge](https://github.com/nicepkg/feishu-claude-bridge)
+- [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的网关
+- [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）

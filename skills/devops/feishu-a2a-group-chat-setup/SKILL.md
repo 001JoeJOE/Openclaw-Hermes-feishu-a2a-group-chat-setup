@@ -123,6 +123,8 @@ node bridge.js
 | OpenClaw Gateway | `http://<本机IP>:<port>/` | Windows 本机 IP（非 `127.0.0.1`），如 `http://192.168.x.x:18789/` |
 | feishu-claude-bridge | `http://<本机IP>:<port>/webhook/event` | 同上，端口自定义 |
 
+> ⚠️ **顺序提醒**：建议先到 Step 3 申请权限并发布版本，权限审批通过后再回来添加事件。因为添加事件后飞书会立即验证回调地址，部分权限没通过可能导致验证失败。
+
 2. **添加事件**
    - 点击 **「添加事件」**
    - 搜索并添加以下事件：
@@ -273,7 +275,8 @@ mode: websocket
 
 1. 左侧菜单 → **安全设置**
 2. 关闭 **「IP 白名单」**
-3. （可选）添加你的服务器 IP 到白名单
+3. 在 **「回调配置」** 中，如果使用 HTTP 而非 HTTPS，需要关闭 **「加密模式」** 或确保签名验证通过
+4. （可选）添加你的服务器 IP 到白名单
 
 ---
 
@@ -391,6 +394,8 @@ hermes gateway --profile my-agent --log-level debug
   - [ ] `im:resource`
   - [ ] `contact:group:readonly`
 - [ ] Bot 机器人功能已开启
+- [ ] 「开启机器人对话流」已开启
+- [ ] 「群聊机器人的流式输出」已关闭
 - [ ] Bot 已拉入群聊
 - [ ] 应用已发布上线
 - [ ] Bot 在群聊中 @ 可正常响应
@@ -418,7 +423,6 @@ hermes gateway --profile my-agent --log-level debug
 
 ## 相关资源
 
-- `references/feishu-permission-names.md` — 飞书权限名完整映射表（API代码名 ↔ 飞书后台显示名）
 - [飞书开放平台文档](https://open.feishu.cn/document/)
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
 - [OpenClaw 文档](https://github.com/nicepkg/openclaw)

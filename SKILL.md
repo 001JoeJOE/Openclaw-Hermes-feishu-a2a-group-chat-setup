@@ -578,3 +578,4 @@ Hermes Gateway / OpenClaw Gateway / feishu-claude-bridge 均可通过「post」�
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
 - [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的网关
 - [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）
+- [Multi-Platform Bot Troubleshooting](https://github.com/001JoeJOE/Openclaw-Hermes-feishu-a2a-group-chat-setup/blob/main/skills/devops/multi-platform-agent-troubleshooting/SKILL.md) — 集群级 Bot 故障排查（Hermes + OpenClaw 混合环境）

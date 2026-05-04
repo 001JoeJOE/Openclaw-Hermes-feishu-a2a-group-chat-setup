@@ -237,7 +237,7 @@ gateway:
       - ou_yyyyy  # 用户2（另一个 Bot）
 ```
 
-> `allowed_users` 中的 `ou_xxx` 是飞书用户的 `open_id`。Bot 也是用户，有自己的 `open_id`。在飞书开发者后台 → 应用详情 → **基础信息** 可查看 Bot 的 `open_id`。
+> `allowed_users` 中的 `ou_xxx` 是飞书用户的 `open_id`。Bot 也是用户，有自己的 `open_id`，需通过下面「获取 Bot 的 open_id」的方法从日志中获取（开发者后台没有地方显示 Bot 的 open_id）。
 
 > ⚠️ 如果 `allowed_users` 为空或未配置，Bot 会响应所有消息（不推荐在生产环境这样做）。
 
@@ -264,16 +264,18 @@ feishu:
 
 > ⚠️ **重要顺序提醒：** 在 `allowed_users` 中配置其他 Bot 之前，必须先获取到它的 open_id。但你无法通过该 Bot 自身发出的消息获取（因为 `allowed_users` 尚未包含它时，Bot 不会处理它的消息）。正确做法：
 
-**从 Bot 主动发出的消息获取**
+从 Bot 主动发出的消息获取
 
-1. 确保目标 Bot 的 Gateway 已运行（Step 1）
+1. 确保目标 Bot 的 Gateway 已运行（Step 1/6）
 2. **临时将目标 Bot 的 `allowed_users` 设为空**（不限制任何用户）——这样任何人都能 @ 它
-3. 在群里 @目标 Bot 发送任意消息
-4. 目标 Bot 回复后，**查看其他 Bot 接收到的消息日志**，找到 `sender.open_id`——那就是目标 Bot 的 open_id
-5. 将该 open_id 添加到其他 Bot 的 `allowed_users` 中
-6. 把目标 Bot 的 `allowed_users` 恢复为正常配置（不再为空）
+3. 重启目标 Bot 的 Gateway（配置变更需要重启生效）
+4. 在群里 @目标 Bot 发送任意消息
+5. 目标 Bot 回复后，**查看其他 Bot 接收到的消息日志**，找到 `sender.open_id`——那就是目标 Bot 的 open_id
+6. 将该 open_id 添加到其他 Bot 的 `allowed_users` 中
+7. 恢复目标 Bot 的 `allowed_users` 为正常配置（不再为空）
+8. 再次重启目标 Bot 的 Gateway
 
-> 💡 也可以用「私聊获取法」作为备选：在私聊里 @目标 Bot，然后查看 Gateway 日志，同样能找到 `sender.open_id`。私聊不需要 `allowed_users` 限制（私聊不受影响）。
+> 💡 也可以用「私聊获取法」作为备选
 
 ### 获取用户的 open_id
 

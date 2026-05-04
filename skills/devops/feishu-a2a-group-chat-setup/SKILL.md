@@ -115,7 +115,8 @@ node bridge.js
 1. **开启事件订阅**
    - 左侧菜单 → **事件与回调**
    - 开关切换为 **「启用」**
-   - 配置回调地址（取决于你的框架）：
+   - **如果使用 WebSocket（推荐）**：不需要填回调地址，直接跳过到第 2 步，在 Step 6 中配置 WebSocket
+   - **如果使用回调地址**：填写以下地址（取决于你的框架）：
 
 | 框架 | 回调地址（Callback URL） | 说明 |
 |------|------------------------|------|
@@ -123,7 +124,7 @@ node bridge.js
 | OpenClaw Gateway | `http://<本机IP>:<port>/` | Windows 本机 IP（非 `127.0.0.1`），如 `http://192.168.x.x:18789/` |
 | feishu-claude-bridge | `http://<本机IP>:<port>/webhook/event` | 同上，端口自定义 |
 
-> ⚠️ **顺序提醒**：建议先到 Step 3 申请权限并发布版本，权限审批通过后再回来添加事件。因为添加事件后飞书会立即验证回调地址，部分权限没通过可能导致验证失败。
+> ⚠️ **顺序提醒**：添加事件后飞书会立即验证配置。建议先完成 Step 3（申请权限）并审批通过后再回来添加事件，避免权限不足导致验证失败。
 
 2. **添加事件**
    - 点击 **「添加事件」**
@@ -164,10 +165,8 @@ node bridge.js
 
 > 💡 **权限名格式提醒**：飞书后台权限名混用**点号**和**冒号**分隔，没有统一规则。
 > - 子权限名可能是 `group_at_msg:readonly`（冒号）或 `group_msg`（点号），实际显示是什么就写什么
-> - 搜不到时加`:readonly`后缀试试，很多只读权限名带这个后缀
+> - 搜不到时加 `:readonly` 后缀试试，很多只读权限名带这个后缀
 > - 搜中文关键词兜底（`消息`、`群`、`@`）
->
-> reference/feishu-permission-names.md
 
 ### 其他权限
 
@@ -198,11 +197,93 @@ node bridge.js
 
 ---
 
-## Step 6：多 Bot A2A 配置（关键步骤）
+## Step 6：启用长连接 WebSocket（可选）
 
-> 多个 Bot 在同一群聊协作的核心配置。
+> 替代公网回调地址，无需暴露端口。
+
+**Hermes Gateway** 支持 WebSocket 长连接模式：
+
+```bash
+hermes gateway --profile my-agent --ws
+```
+
+飞书开发者后台 → **事件与回调** → 关闭 Callback URL，开启 **WebSocket** 模式即可。
+
+**feishu-claude-bridge** 支持 WebSocket：
+
+```yaml
+# config.yaml
+mode: websocket
+```
+
+> 长连接模式不需要公网 IP 和端口映射，适合内网环境。
+
+---
+
+## Step 7：发布上线
+
+> 飞书自建应用默认只在「测试企业」或沙箱环境中运行。要让其在真实企业/群聊中生效，必须发布正式版本。
+
+1. 飞书开发者后台 → **版本管理与发布**
+2. 点击 **「创建版本」**
+3. 填写版本号、更新说明
+4. 确认已添加所有需要的权限和事件
+5. 点击 **「发布」**
+6. 等待管理员审核通过
+
+> 至此 Bot 已可在群聊中被 @ 并响应。如需多 Bot A2A 协作，继续下一步。
+
+---
+
+## Step 8：多 Bot A2A 配置（关键步骤）
+
+### ⚠️ 关键前置：启用 Bot-to-Bot 通信
+
+这是多 Bot 协作最常见的新手陷阱。**Hermes Gateway 默认拒绝所有来自其他 Bot 的消息**，日志中表现为：
+
+```
+dropping inbound event: bots_disabled
+```
+
+根因：飞书适配器内部配置 `FEISHU_ALLOW_BOTS=none`（默认值）。
+
+**修复方式（两处都需要配）：**
+
+#### 1. config.yaml — 声明式配置
+
+在 profile 的 gateway.feishu 段添加：
+
+```yaml
+gateway:
+  feishu:
+    respond_to_bots: true          # 允许响应 Bot 消息
+    require_mention_in_group: true  # 仅 @时响应
+```
+
+#### 2. .env — 环境变量配置
+
+在 profile 对应的 `.env` 文件中添加：
+
+```bash
+FEISHU_ALLOW_BOTS=mentions   # mentions=仅 @时响应 Bot 消息; all=全部响应
+```
+
+> ⚠️ **两处缺一不可**。`respond_to_bots` 控制飞书适配器行为，`FEISHU_ALLOW_BOTS` 控制 Gateway 入口过滤层。只配一个，Bot 消息仍然会被静默丢弃。
+
+#### 3. 多 Profile 需分别配置
+
+如果启用了多个 Gateway profile（如 `default` 和 `touyan`），每个 profile 的 `.env` 都要加 `FEISHU_ALLOW_BOTS=mentions`：
+
+```bash
+~/.hermes/.env                   # default profile
+~/.hermes/profiles/touyan/.env   # touyan profile
+```
+
+> 每个 Gateway 进程是独立的，入口过滤互不影响。
 
 ### 配置 Bot 允许交互的成员列表
+
+> 以下步骤在启用 Bot-to-Bot 通信**之后**，作为额外的访问控制层。
 
 **Hermes Gateway：** 在 profile 的 `.env` 或 `config.yaml` 中添加：
 
@@ -214,7 +295,7 @@ gateway:
       - ou_yyyyy  # 用户2（另一个 Bot）
 ```
 
-> `allowed_users` 中的 `ou_xxx` 是飞书用户的 `open_id`。Bot 也是用户，有自己的 `open_id`。在飞书开发者后台 → 应用详情 → **基础信息** 可查看 Bot 的 `open_id`。
+> `allowed_users` 中的 `ou_xxx` 是飞书用户的 `open_id`。Bot 也是用户，有自己的 `open_id`，需通过下面「获取 Bot 的 open_id」的方法从日志中获取（开发者后台没有地方显示 Bot 的 open_id）。
 
 > ⚠️ 如果 `allowed_users` 为空或未配置，Bot 会响应所有消息（不推荐在生产环境这样做）。
 
@@ -239,62 +320,26 @@ feishu:
 
 ### 获取 Bot 的 open_id
 
-1. 在飞书群里 @Bot 发送一条任意消息
-2. 查看 Bot 收到的消息日志，找到 `sender.open_id` 或 `open_id`
-3. 将该值添加到其他 Bot 的 `allowed_users` 中
+> ⚠️ **重要顺序提醒：** 在 `allowed_users` 中配置其他 Bot 之前，必须先获取到它的 open_id。但你无法通过该 Bot 自身发出的消息获取（因为 `allowed_users` 尚未包含它时，Bot 不会处理它的消息）。正确做法：
+
+从 Bot 主动发出的消息获取
+
+1. 确保目标 Bot 的 Gateway 已运行（Step 1/6）
+2. **临时将目标 Bot 的 `allowed_users` 设为空**（不限制任何用户）——这样任何人都能 @ 它
+3. 重启目标 Bot 的 Gateway（配置变更需要重启生效）
+4. 在群里 @目标 Bot 发送任意消息
+5. 目标 Bot 回复后，**查看其他 Bot 接收到的消息日志**，找到 `sender.open_id`——那就是目标 Bot 的 open_id
+6. 将该 open_id 添加到其他 Bot 的 `allowed_users` 中
+7. 恢复目标 Bot 的 `allowed_users` 为正常配置（不再为空）
+8. 再次重启目标 Bot 的 Gateway
+
+> 💡 **私聊获取法（备选）**：在飞书私聊中 @目标 Bot 发送任意消息，然后查看**目标 Bot 自己的 Gateway 日志**，找到 `sender.open_id`。私聊不受 `allowed_users` 限制，因此不需要临时放空配置，也更简单快捷。
 
 ### 获取用户的 open_id
 
-同样方法：用户在群里发一条消息，从日志中获得其 `open_id`。如果用户同时在私聊和群聊与 Bot 交互，注意：
+用户在群里发一条消息，从日志中获得其 `open_id`。如果用户同时在私聊和群聊与 Bot 交互，注意：
 
 > 飞书中同一用户的 **私聊 open_id** 和 **群聊 open_id** 可能不同。如果用户在群里 @Bot 不响应，检查 `allowed_users` 是否包含了该用户在群聊上下文中的 open_id。
-
----
-
-## Step 7：启用长连接 WebSocket（可选）
-
-> 替代公网回调地址，无需暴露端口。
-
-**Hermes Gateway** 支持 WebSocket 长连接模式：
-
-```bash
-hermes gateway --profile my-agent --ws
-```
-
-飞书开发者后台 → **事件与回调** → 关闭 Callback URL，开启 **WebSocket** 模式即可。
-
-**feishu-claude-bridge** 支持 WebSocket：
-
-```yaml
-# config.yaml
-mode: websocket
-```
-
-> 长连接模式不需要公网 IP 和端口映射，适合内网环境。
-
----
-
-## Step 8：飞书开发者后台——安全设置（可选）
-
-> 如果你的回调地址是 HTTP（非 HTTPS），飞书默认会拒绝。在沙箱/测试环境可以关闭 IP 白名单验证。
-
-1. 左侧菜单 → **安全设置**
-2. 关闭 **「IP 白名单」**
-3. 在 **「回调配置」** 中，如果使用 HTTP 而非 HTTPS，需要关闭 **「加密模式」** 或确保签名验证通过
-4. （可选）添加你的服务器 IP 到白名单
-
----
-
-## Step 9：发布上线
-
-> 飞书自建应用默认只在「测试企业」或沙箱环境中运行。要让其在真实企业/群聊中生效，必须发布正式版本。
-
-1. 飞书开发者后台 → **版本管理与发布**
-2. 点击 **「创建版本」**
-3. 填写版本号、更新说明
-4. 确认已添加所有需要的权限和事件
-5. 点击 **「发布」**
-6. 等待管理员审核通过
 
 ---
 
@@ -356,11 +401,20 @@ feishu:
 | 1 | 权限是否审批通过 | 飞书后台 → 权限管理 → 查看状态是否为 **「已通过」** |
 | 2 | Bot 是否在群里 | 群设置 → 群机器人 → 确认机器人已添加 |
 | 3 | 事件是否配置 | 事件与回调 → `im.message.receive_v1` 是否启用 |
-| 4 | 回调地址是否正确 | 网关日志是否有飞书请求进入；用 `curl` 测试回调地址是否可达 |
+| 4 | WebSocket 连接正常？ | 网关日志中应有 `connected to wss://` 日志 |
 | 5 | `allowed_users` 配置 | 用户的 **群聊 open_id** 是否在 `allowed_users` 列表中？用户私聊和群聊的 open_id 可能不同 |
-| 6 | 长连接/Callback 模式 | 如果是 WebSocket 模式，确认飞书后台关掉了 Callback URL |
-| 7 | IP 白名单 | 如果开启 IP 白名单，确认网关所在服务器 IP 已添加 |
-| 8 | 版本已发布 | 开发者的修改必须「发布」后才会在生产环境生效 |
+| 6 | WebSocket 模式已启用？ | 如果使用 WebSocket，确认飞书后台关掉了 Callback URL，开启了 WebSocket 模式 |
+| 7 | 版本已发布 | 开发者的修改必须「发布」后才会在生产环境生效 |
+
+### Bot 不响应来自其他 Bot 的 @消息（A2A 失效）
+
+| # | 检查项 | 说明 |
+|---|--------|------|
+| 1 | `FEISHU_ALLOW_BOTS` 已设置？ | 在 `.env` 中设为 `mentions`，否则其他 Bot 的消息被入口丢弃（日志: `dropping inbound event: bots_disabled`） |
+| 2 | `respond_to_bots: true` 已设置？ | 在 `config.yaml` 的 `gateway.feishu` 段添加，控制飞书适配器接受 Bot 消息 |
+| 3 | 两处都已配置？ | **`.env` 和 `config.yaml` 缺一不可**，分别控制不同层面的过滤 |
+| 4 | 所有 profile 都已配置？ | 如果有多个 Gateway profile（default / touyan 等），每个的 `.env` 都要加 |
+| 5 | Gateway 已重启？ | `.env` 和 `config.yaml` 的修改需要重启 Gateway 进程才生效 |
 
 ### 检查日志
 
@@ -384,6 +438,7 @@ hermes gateway --profile my-agent --log-level debug
 | `event verification failed` | 回调地址无法访问 | 检查地址是否正确，是否在公网可达 |
 | `invalid open_id` | 用户或 Bot 的 open_id 有误 | 从消息日志中获取准确的 open_id |
 | `webhook timeout` | 网关处理时间超过飞书限制（3s） | 检查网关负载，考虑异步处理 |
+| `xhtml2pdf` module not found | PDF 报告依赖 pycairo 编译失败，需系统 libcairo2-dev + meson-python | 禁用 PDF 或安装系统依赖：`sudo apt install libcairo2-dev python3-dev` + `pip install meson-python ninja` |
 
 ---
 
@@ -405,6 +460,9 @@ hermes gateway --profile my-agent --log-level debug
 - [ ] 应用已发布上线
 - [ ] Bot 在群聊中 @ 可正常响应
 - [ ] 多 Bot A2A 模式下，每个 Bot 的 `allowed_users` 都包含其他 Bot 的 open_id
+- [ ] Bot-to-Bot 通信已启用（`.env` 中 `FEISHU_ALLOW_BOTS=mentions`）
+- [ ] Bot-to-Bot 通信已启用（`config.yaml` 中 `respond_to_bots: true`）
+- [ ] 所有 profile 的 `.env` 都配置了 `FEISHU_ALLOW_BOTS`
 
 ---
 
@@ -449,14 +507,40 @@ hermes gateway --profile my-agent --log-level debug
 
 **✅ Bot 可以发出蓝色 @ 链接**
 
-Hermes Gateway 的飞书 Bot 可以通过「post」富文本消息格式发送 `<at user_id="ou_xxx">名字</at>` 标签，飞书会将其渲染为蓝色 @ 链接。
+Hermes Gateway / OpenClaw Gateway / feishu-claude-bridge 均可通过「post」富文本消息格式的 `<at>` 标签，让飞书渲染为蓝色可点击的 @ 链接。
 
-**注意：** Hermes Gateway 目前默认将不含 Markdown 的内容以纯文本格式发送。当需要 @ 其他 Bot 时，回复内容中应包含能触发 Markdown 格式处理的格式化标记，或者等待 Hermes 更新支持显式的 `@` 语法注入。
+#### Hermes Gateway（v0.11.0+）专用方案
 
-**当前推荐做法：**
-- **Bot 间相互指代时：** 可以直接用文字说出名字，其他 Bot 检查上下文主动回应
-- **人类用户 @ Bot：** 在飞书客户端输入 `@` 并从弹出列表中选择
-- **关键节点串联：** 由人类用户做蓝链 @ 的手动串联
+`feishu.py` 的 `_build_outbound_payload` 方法检测消息内容包含 `@` 字符时，自动切换为 post 格式并注入 `{"tag": "at", "user_id": "ou_xxx"}` 元素。
+
+**缓存机制（反向缓存）：**
+- Bot 维护 `_name_to_open_id_cache` 反向缓存（名字→open_id）
+- 与 `_sender_name_cache`（open_id→名字, TTL 10min）同步更新
+- 收到群消息时提取 sender 的名字和 open_id 写入缓存
+- **只有缓存中存在的名字**才能渲染为蓝色 @ 链接；未命中的保持纯文本
+- 源码关键位置：`name_to_open_id_cache`（`__init__` 初始化）、`_resolve_sender_name_from_api` 中同步更新、`_build_outbound_payload` 中 `"@" in content` 分支
+
+#### 其他框架（OpenClaw / feishu-claude-bridge）
+
+各框架有各自的 post 消息构建方式，原理相同：在富文本消息体中嵌入 `<at user_id="ou_xxx">` 标签。
+
+#### 最佳实践
+
+| 场景 | 做法 |
+|------|------|
+| Bot 在回复中 @ 另一个 Bot | 直接写 `@另一个Bot的名字`，Hermes 自动检测缓存并渲染蓝链 |
+| 初始预热缓存 | 让人类用户在群里先 @ 一次目标 Bot → 其 open_id 进入各方缓存 |
+| A2A 协作链接力 | 完成任务后末尾写 `@下一个Bot名字`，自动蓝链接力 |
+| 缓存未命中时 | `@名字` 保持纯文本可见，不影响功能，只是非蓝色 |
+| 缓存过期后 | TTL 10 分钟，收到新消息自动刷新 |
+
+#### ⚠️ 已知限制
+
+1. **缓存依赖消息活动：** 如果群里没人发过消息，反向缓存为空，所有 @ 都是纯文本
+2. **名字精确匹配：** 飞书中的显示名字必须与 `@` 后面的文本完全一致（含空格、emoji）
+3. **仅限 Hermes v0.11.0+：** 旧版本或未修改的 Hermes 无此功能
+4. **不支持 @all：** 如需 @all，需单独使用飞书原生格式 `{"tag": "at", "user_id": "@_all"}`
+5. **名字冲突：** 同名的两人→缓存覆盖为最后一个收到消息的人
 
 **⚠️ 架构约束：每个 Bot 需要独立 Gateway**
 
@@ -494,3 +578,4 @@ Hermes Gateway 的飞书 Bot 可以通过「post」富文本消息格式发送 `
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
 - [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的网关
 - [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）
+- [Multi-Platform Bot Troubleshooting](https://github.com/001JoeJOE/Openclaw-Hermes-feishu-a2a-group-chat-setup/blob/main/skills/devops/multi-platform-agent-troubleshooting/SKILL.md) — 集群级 Bot 故障排查（Hermes + OpenClaw 混合环境）

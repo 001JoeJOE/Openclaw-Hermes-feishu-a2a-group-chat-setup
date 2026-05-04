@@ -198,7 +198,30 @@ node bridge.js
 
 ---
 
-## Step 6：多 Bot A2A 配置（关键步骤）
+## Step 6：启用长连接 WebSocket（可选）
+
+> 替代公网回调地址，无需暴露端口。
+
+**Hermes Gateway** 支持 WebSocket 长连接模式：
+
+```bash
+hermes gateway --profile my-agent --ws
+```
+
+飞书开发者后台 → **事件与回调** → 关闭 Callback URL，开启 **WebSocket** 模式即可。
+
+**feishu-claude-bridge** 支持 WebSocket：
+
+```yaml
+# config.yaml
+mode: websocket
+```
+
+> 长连接模式不需要公网 IP 和端口映射，适合内网环境。
+
+---
+
+## Step 7：多 Bot A2A 配置（关键步骤）
 
 > 多个 Bot 在同一群聊协作的核心配置。
 
@@ -257,29 +280,6 @@ feishu:
 用户在群里发一条消息，从日志中获得其 `open_id`。如果用户同时在私聊和群聊与 Bot 交互，注意：
 
 > 飞书中同一用户的 **私聊 open_id** 和 **群聊 open_id** 可能不同。如果用户在群里 @Bot 不响应，检查 `allowed_users` 是否包含了该用户在群聊上下文中的 open_id。
-
----
-
-## Step 7：启用长连接 WebSocket（可选）
-
-> 替代公网回调地址，无需暴露端口。
-
-**Hermes Gateway** 支持 WebSocket 长连接模式：
-
-```bash
-hermes gateway --profile my-agent --ws
-```
-
-飞书开发者后台 → **事件与回调** → 关闭 Callback URL，开启 **WebSocket** 模式即可。
-
-**feishu-claude-bridge** 支持 WebSocket：
-
-```yaml
-# config.yaml
-mode: websocket
-```
-
-> 长连接模式不需要公网 IP 和端口映射，适合内网环境。
 
 ---
 

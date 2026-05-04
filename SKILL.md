@@ -237,7 +237,53 @@ mode: websocket
 
 ## Step 8：多 Bot A2A 配置（关键步骤）
 
+### ⚠️ 关键前置：启用 Bot-to-Bot 通信
+
+这是多 Bot 协作最常见的新手陷阱。**Hermes Gateway 默认拒绝所有来自其他 Bot 的消息**，日志中表现为：
+
+```
+dropping inbound event: bots_disabled
+```
+
+根因：飞书适配器内部配置 `FEISHU_ALLOW_BOTS=none`（默认值）。
+
+**修复方式（两处都需要配）：**
+
+#### 1. config.yaml — 声明式配置
+
+在 profile 的 gateway.feishu 段添加：
+
+```yaml
+gateway:
+  feishu:
+    respond_to_bots: true          # 允许响应 Bot 消息
+    require_mention_in_group: true  # 仅 @时响应
+```
+
+#### 2. .env — 环境变量配置
+
+在 profile 对应的 `.env` 文件中添加：
+
+```bash
+FEISHU_ALLOW_BOTS=mentions   # mentions=仅 @时响应 Bot 消息; all=全部响应
+```
+
+> ⚠️ **两处缺一不可**。`respond_to_bots` 控制飞书适配器行为，`FEISHU_ALLOW_BOTS` 控制 Gateway 入口过滤层。只配一个，Bot 消息仍然会被静默丢弃。
+
+#### 3. 多 Profile 需分别配置
+
+如果启用了多个 Gateway profile（如 `default` 和 `touyan`），每个 profile 的 `.env` 都要加 `FEISHU_ALLOW_BOTS=mentions`：
+
+```bash
+~/.hermes/.env                   # default profile
+~/.hermes/profiles/touyan/.env   # touyan profile
+```
+
+> 每个 Gateway 进程是独立的，入口过滤互不影响。
+
 ### 配置 Bot 允许交互的成员列表
+
+> 以下步骤在启用 Bot-to-Bot 通信**之后**，作为额外的访问控制层。
 
 **Hermes Gateway：** 在 profile 的 `.env` 或 `config.yaml` 中添加：
 
@@ -360,6 +406,16 @@ feishu:
 | 6 | WebSocket 模式已启用？ | 如果使用 WebSocket，确认飞书后台关掉了 Callback URL，开启了 WebSocket 模式 |
 | 7 | 版本已发布 | 开发者的修改必须「发布」后才会在生产环境生效 |
 
+### Bot 不响应来自其他 Bot 的 @消息（A2A 失效）
+
+| # | 检查项 | 说明 |
+|---|--------|------|
+| 1 | `FEISHU_ALLOW_BOTS` 已设置？ | 在 `.env` 中设为 `mentions`，否则其他 Bot 的消息被入口丢弃（日志: `dropping inbound event: bots_disabled`） |
+| 2 | `respond_to_bots: true` 已设置？ | 在 `config.yaml` 的 `gateway.feishu` 段添加，控制飞书适配器接受 Bot 消息 |
+| 3 | 两处都已配置？ | **`.env` 和 `config.yaml` 缺一不可**，分别控制不同层面的过滤 |
+| 4 | 所有 profile 都已配置？ | 如果有多个 Gateway profile（default / touyan 等），每个的 `.env` 都要加 |
+| 5 | Gateway 已重启？ | `.env` 和 `config.yaml` 的修改需要重启 Gateway 进程才生效 |
+
 ### 检查日志
 
 ```bash
@@ -404,6 +460,9 @@ hermes gateway --profile my-agent --log-level debug
 - [ ] 应用已发布上线
 - [ ] Bot 在群聊中 @ 可正常响应
 - [ ] 多 Bot A2A 模式下，每个 Bot 的 `allowed_users` 都包含其他 Bot 的 open_id
+- [ ] Bot-to-Bot 通信已启用（`.env` 中 `FEISHU_ALLOW_BOTS=mentions`）
+- [ ] Bot-to-Bot 通信已启用（`config.yaml` 中 `respond_to_bots: true`）
+- [ ] 所有 profile 的 `.env` 都配置了 `FEISHU_ALLOW_BOTS`
 
 ---
 

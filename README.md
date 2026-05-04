@@ -10,9 +10,9 @@
 
 | 框架 | 配置章节 | 说明 |
 |------|----------|------|
-| Hermes Gateway | Step 5 选项 A | `config.yaml` + `.env` |
-| OpenClaw | Step 5 选项 B | `config.yaml` |
-| feishu-claude-bridge | Step 5 选项 C | `config.json` / `config.yaml` |
+| Hermes Gateway | Step 1a | `config.yaml` + `.env`（需同时配 `respond_to_bots` + `FEISHU_ALLOW_BOTS`） |
+| OpenClaw | Step 1b | `config.yaml` |
+| feishu-claude-bridge | Step 1c | `config.json` / `config.yaml` |
 
 不管用什么框架，**飞书开发者后台的权限配置是通用的**——本指南覆盖了最常踩的坑。
 

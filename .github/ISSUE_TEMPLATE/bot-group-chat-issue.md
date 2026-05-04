@@ -36,6 +36,7 @@ Bot 在群聊中有什么异常？收不到 @消息、收不到回复、还是�
 - [ ] `im.message.receive_v1` 事件已订阅
 - [ ] 权限修改后已**发布新版本**
 - [ ] Bot 已添加到目标群
+- [ ] 新加群的 chat_id 已在 group_chats + group_chat_allowlist 两处白名单都添加了
 
 ## 关键配置（脱敏后）
 
@@ -51,15 +52,16 @@ Bot 在群聊中有什么异常？收不到 @消息、收不到回复、还是�
 一共几个 ID？包含所有人和所有 Bot 吗？
 ```
 
-### respond_to_bots 配置
+### Bot-to-Bot 通信配置（多 Bot 协作时）
 ```
-true / false
+respond_to_bots: true / false ?
+FEISHU_ALLOW_BOTS: mentions / all / none ? （所有 profile 都配了吗？）
 ```
 
 ## 框架日志片段
 
 <!-- 请粘贴相关日志片段，尤其是包含以下关键词的行：
-     inbound / group_policy_rejected / [WS] Connected / WebSocket disconnected -->
+     inbound / group_policy_rejected / bots_disabled / [WS] Connected / WebSocket disconnected -->
 
 ```
 （粘贴日志片段）
@@ -71,6 +73,8 @@ true / false
 - [ ] 群设置中移除 Bot 重新添加
 - [ ] 检查并确认 open_id 正确
 - [ ] 检查 allowed_users 完整
+- [ ] 检查 FEISHU_ALLOW_BOTS 所有 profile 都已配置
+- [ ] 检查 respond_to_bots: true（config.yaml）和 FEISHU_ALLOW_BOTS=mentions（.env）两处都配了
 
 ## 补充说明
 

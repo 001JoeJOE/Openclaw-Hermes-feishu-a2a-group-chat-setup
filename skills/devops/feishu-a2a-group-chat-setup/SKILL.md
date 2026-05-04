@@ -138,9 +138,10 @@ curl -H "Authorization: Bearer <tenant_access_token>" \
 **`.env` 文件：**
 ```ini
 FEISHU_APP_ID=cli_xxx...
-FEISHU_APP_SECRET=xxx...
+FEISHU_APP_SECRET=***
 FEISHU_BOT_OPEN_ID=ou_xxx...              # Step 3 获取的值
 FEISHU_ALLOWED_USERS=ou_xxx,ou_yyy,...    # Step 4 获取的全部 open_id（人和Bot）
+FEISHU_ALLOW_BOTS=mentions                 # ✅ 关键 A2A 设置——允许响应 Bot 消息（mentions=仅@时; all=全部; none=拒绝）
 GATEWAY_ALLOW_ALL_USERS=true               # 可选，配合白名单使用
 ```
 
@@ -183,7 +184,7 @@ OpenClaw 使用 `config.yaml` 和 `.env` 配置飞书连接。OpenClaw v1.46+ �
 **`.env` 文件：**
 ```ini
 FEISHU_APP_ID=cli_xxx...
-FEISHU_APP_SECRET=xxx...
+FEISHU_APP_SECRET=***
 ```
 
 **`config.yaml` 关键配置：**
@@ -337,10 +338,17 @@ curl -H "Authorization: Bearer <tenant_access_token>" \
 6. **流式输出开着导致串台（Hermes Gateway）。** 多个 Bot 同时回复时，A Bot 的回复片段出现在 B Bot 的回复中。
    - 解法：关闭 `streaming.enabled` 和 `features.streaming_cards`
 
-7. **`respond_to_bots` 没设为 true。** Bot 收到人类 @ 消息正常，但其他 Bot @ 时完全不回应。
-   - 解法：框架配置中找到响应 Bot 的开关，设为 true
+7. **`respond_to_bots` 没设为 true 或 `FEISHU_ALLOW_BOTS` 缺位。** Bot 收到人类 @ 消息正常，但其他 Bot @ 时完全不回应。有两种情况：
+   - 日志有 `dropping inbound event: bots_disabled` → `.env` 缺 `FEISHU_ALLOW_BOTS=mentions`（Gateway 入口过滤层）
+   - 日志没有该行但 Bot 不回应其他 Bot → `config.yaml` 缺 `respond_to_bots: true`（飞书适配器层）
+   - 解法（**两处缺一不可**）：
+     a. `.env`: `FEISHU_ALLOW_BOTS=mentions`（mentions=仅@时响应; all=全部响应; none=默认，拒绝所有Bot消息）
+     b. `config.yaml` gateway.feishu 段: `respond_to_bots: true`
+   - **多 profile 注意**：如果有多个 Gateway profile（default / touyan 等），每个 profile 的 `.env` 都要单独加 `FEISHU_ALLOW_BOTS=mentions`，缺一个则该 profile 的 Gateway 入口仍然丢弃 Bot 消息。
 
-8. **以为只有 Hermes 有这些问题。** OpenClaw 和 feishu-claude-bridge 一样会踩中飞书侧的权限和哑死坑——这些不是框架问题，是飞书 Bot 开发的共性问题。
+8. **`FEISHU_ALLOW_BOTS` 只配了部分 profile。** 多 Gateway 实例各自有独立的入口过滤层，只配了 default 没配 touyan，则 touyan Gateway 仍然拒绝 Bot 消息。
+
+9. **以为只有 Hermes 有这些问题。** OpenClaw 和 feishu-claude-bridge 一样会踩中飞书侧的权限和哑死坑——这些不是框架问题，是飞书 Bot 开发的共性问题。
 
 ---
 
@@ -355,6 +363,7 @@ curl -H "Authorization: Bearer <tenant_access_token>" \
 - [ ] Bot open_id 来自 `bot/v3/info` API（非跨 App 提取）
 - [ ] allowed_users 包含**所有人 + 所有 Bot** 的群 open_id
 - [ ] `respond_to_bots`（或等效配置项）设为 `true`
+- [ ] `.env` 中 `FEISHU_ALLOW_BOTS=mentions` 已设置（所有 profile）
 - [ ] 流式输出已关闭（如框架支持）
 - [ ] 发一条群 @消息测试 → 框架日志显示消息已收到
 - [ ] 多个 Bot 之间互相 @ 能正常收到和回复

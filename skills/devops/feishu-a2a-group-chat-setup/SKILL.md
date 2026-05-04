@@ -281,6 +281,33 @@ FEISHU_ALLOW_BOTS=mentions   # mentions=仅 @时响应 Bot 消息; all=全部响
 
 > 每个 Gateway 进程是独立的，入口过滤互不影响。
 
+### ⚠️ 常见陷阱：新加群需在两处添加 chat_id
+
+当投研助理（或其他使用了独立 profile 的 Bot）需要加入**新的飞书群**时，`config.yaml` 中有**两个白名单位置**必须同步添加群聊的 `chat_id`，缺一不可：
+
+**位置 1：** `channels.feishu.accounts.<account_name>.group_chats`
+```yaml
+channels:
+  feishu:
+    accounts:
+      research:
+        group_chats:
+          - oc_xxxxx  # 已有的群
+          - oc_yyyyy  # 新加的群 ← 这里
+```
+
+**位置 2：** `platforms.feishu.extra.group_chat_allowlist`
+```yaml
+platforms:
+  feishu:
+    extra:
+      group_chat_allowlist:
+        - oc_xxxxx  # 已有的群
+        - oc_yyyyy  # 新加的群 ← 这里
+```
+
+> ⚠️ 漏任一处则新群中所有 @消息被静默丢弃，日志无明确报错。两个位置控制不同层面的过滤层：`group_chats` 控制消息路由，`group_chat_allowlist` 控制入口准入。
+
 ### 配置 Bot 允许交互的成员列表
 
 > 以下步骤在启用 Bot-to-Bot 通信**之后**，作为额外的访问控制层。
@@ -463,6 +490,7 @@ hermes gateway --profile my-agent --log-level debug
 - [ ] Bot-to-Bot 通信已启用（`.env` 中 `FEISHU_ALLOW_BOTS=mentions`）
 - [ ] Bot-to-Bot 通信已启用（`config.yaml` 中 `respond_to_bots: true`）
 - [ ] 所有 profile 的 `.env` 都配置了 `FEISHU_ALLOW_BOTS`
+- [ ] 新加的群聊同时出现在 `group_chats` 和 `group_chat_allowlist` 两处白名单中
 
 ---
 
@@ -578,4 +606,4 @@ Hermes Gateway / OpenClaw Gateway / feishu-claude-bridge 均可通过「post」�
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
 - [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的网关
 - [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）
-- [Multi-Platform Bot Troubleshooting](https://github.com/001JoeJOE/Openclaw-Hermes-feishu-a2a-group-chat-setup/blob/main/skills/devops/multi-platform-agent-troubleshooting/SKILL.md) — 集群级 Bot 故障排查（Hermes + OpenClaw 混合环境）
+- [Multi-Platform Bot Troubleshooting](devops/multi-platform-agent-troubleshooting/SKILL.md) — 集群级 Bot 故障排查（Hermes + OpenClaw 混合环境）

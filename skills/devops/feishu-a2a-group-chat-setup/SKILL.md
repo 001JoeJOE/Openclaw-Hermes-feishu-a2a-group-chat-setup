@@ -36,7 +36,7 @@ category: devops
 **所有框架都要做这一步。**
 
 1. 打开 [飞书开发者后台](https://open.feishu.cn/app)
-2. 点击「创建企业自建应用」，输入名称（如「龙虾暖暖」），上传头像
+2. 点击「创建企业自建应用」，输入名称（如「我的机器人」），上传头像
 3. 创建成功后，左侧菜单 → **凭证与基础信息**
 4. 记录以下值（后面会用到）：
    - `APP_ID`（格式如 `cli_a9f8b2c3d4e5`）
@@ -469,12 +469,12 @@ FEISHU_REQUIRE_MENTION=true
 
 Hermes 内置的 `_mentions_self` 方法**已自动检测** `@_all` in raw_content ✅
 
-#### feishu-claude-bridge（极客Claude + 科科Claude）
+#### feishu-claude-bridge（多实例）
 
 **① 环境变量：**
 
 ```bash
-# config.env (极客Claude) / config.keke.env (科科Claude)
+# config.env (实例 1) / config.xxx.env (实例 2)
 CTI_FEISHU_ENABLE_ALL_KEYWORD=true
 CTI_FEISHU_REQUIRE_MENTION=true
 ```
@@ -492,7 +492,7 @@ const hasAllKeyword = msgText.includes('所有人')
 
 > ⚠️ 修改后需 `esbuild` 重新编译并重启 daemon
 
-#### OpenClaw Gateway（龙虾 Jojo + 萃萃）
+#### OpenClaw Gateway（多 Bot）
 
 ✅ OpenClaw 飞书插件**原生支持**「所有人」关键词 bypass（`requireMention=true` 时）：
 - `monitor-DDkD5r4p.js` line 148：`content.includes("@_all")` → 飞书原生 @所有人 检测
@@ -514,7 +514,7 @@ const hasAllKeyword = msgText.includes('所有人')
 
 | # | 测试 | 预期结果 |
 |---|------|---------|
-| 1 | 发飞书原生 @所有人 | 马系 + 极客系全部响应 |
+| 1 | 发飞书原生 @所有人 | 支持 @_all 检测的 Bot 响应 |
 | 2 | 发约定关键词「所有人」 | 所有 Bot 响应（含开启全关键词的） |
 | 3 | @ 单个 Bot | 只有该 Bot 响应（不串台） |
 

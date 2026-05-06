@@ -56,6 +56,11 @@
 - [Bot 群聊问题模板](.github/ISSUE_TEMPLATE/bot-group-chat-issue.md) — 报 Bug 时填写，自动收集环境信息和关键配置
 - [功能建议模板](.github/ISSUE_TEMPLATE/feature-request.md) — 补充新框架支持或改进建议
 
+## 相关资源
+
+- [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
+- [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）
+
 ## 许可证
 
 [MIT](LICENSE) © 2026 Joe

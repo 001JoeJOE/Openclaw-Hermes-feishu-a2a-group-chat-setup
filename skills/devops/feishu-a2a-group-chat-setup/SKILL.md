@@ -480,7 +480,11 @@ const hasAllKeyword = msgText.includes('所有人')
 
 #### OpenClaw Gateway（龙虾 Jojo + 萃萃）
 
-⚠️ OpenClaw **暂不支持**「所有人」关键词检测，需后续开发。
+✅ OpenClaw 飞书插件**原生支持**「所有人」关键词 bypass（`requireMention=true` 时）：
+- `monitor-DDkD5r4p.js` line 148：`content.includes("@_all")` → 飞书原生 @所有人 检测
+- `monitor-DDkD5r4p.js` line 1600：`content.includes("所有人")` → 约定关键词检测
+
+⚠️ 这是额外自定义配置的结果，非 OpenClaw 出厂默认。
 
 ### 跨 App open_id 不匹配（重要）
 

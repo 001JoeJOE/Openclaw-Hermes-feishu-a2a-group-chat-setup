@@ -50,6 +50,8 @@ category: devops
 
 编辑 `~/.hermes/config.yaml`，在 gateway 段添加对应 profile：
 
+> ⚠️ 以下为示例配置，请替换为你的真实凭证和模型名。
+
 ```yaml
 profiles:
   my-agent:  # profile 名称，可自定义
@@ -59,14 +61,14 @@ profiles:
     tools: true
     gateway:
       feishu:
-        app_id: cli_a9f8b2c3d4e5
+        app_id: cli_xxxxxxxxxxxx
         app_secret: "你的 APP_SECRET"
 ```
 
 然后在终端启动网关：
 
 ```bash
-hermes gateway --profile my-agent
+hermes -p my-agent gateway run
 ```
 
 > 多 profile 需启动多个 gateway 实例（不同 tmux 窗口/会话）
@@ -75,11 +77,15 @@ hermes gateway --profile my-agent
 
 编辑 `~/.openclaw/openclaw.json`：
 
+> ⚠️ 以下为示例配置，请替换为你的真实凭证。OpenClaw 配置在 `channels.feishu` 路径下，非顶层。
+
 ```json
 {
-  "feishu": {
-    "appId": "cli_a9f8b2c3d4e5",
-    "appSecret": "你的 APP_SECRET"
+  "channels": {
+    "feishu": {
+      "appId": "cli_xxxxxxxxxxxx",
+      "appSecret": "你的 APP_SECRET"
+    }
   }
 }
 ```
@@ -92,18 +98,20 @@ openclaw gateway
 
 ### Step 1c：feishu-claude-bridge 配置
 
-编辑 `bridge/config.yaml`：
+编辑 `config.env`：
 
-```yaml
-feishu:
-  app_id: cli_a9f8b2c3d4e5
-  app_secret: "你的 APP_SECRET"
+> ⚠️ 以下为示例配置，请替换为你的真实凭证。Bridge 使用 `.env` 格式，非 YAML。
+
+```bash
+# config.env
+FEISHU_APP_ID=cli_xxxxxxxxxxxx
+FEISHU_APP_SECRET=你的 APP_SECRET
 ```
 
 启动：
 
 ```bash
-node bridge.js
+node daemon.mjs
 ```
 
 ---
@@ -372,6 +380,8 @@ feishu:
 
 ## 完整配置示例
 
+> ⚠️ 以下均为示例，所有 `cli_xxx`、`ou_xxx`、`your_app_secret` 需替换为你的真实值。
+
 ### Hermes Gateway（WSL）
 
 ```yaml
@@ -384,35 +394,39 @@ profiles:
     tools: true
     gateway:
       feishu:
-        app_id: cli_a9f8b2c3d4e5
+        app_id: cli_xxxxxxxxxxxx
         app_secret: "your_app_secret"
         allowed_users:
-          - ou_xxxxx  # 用户
-          - ou_yyyyy  # 另一个 Bot
+          - ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  # 用户
+          - ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  # 另一个 Bot
+```
+
+```bash
+# 启动命令
+hermes -p research-assistant gateway run
 ```
 
 ### OpenClaw Gateway（Windows）
 
 ```json
 {
-  "feishu": {
-    "appId": "cli_a9f8b2c3d4e5",
-    "appSecret": "your_app_secret",
-    "allowedUsers": ["ou_xxxxx", "ou_yyyyy"]
+  "channels": {
+    "feishu": {
+      "appId": "cli_xxxxxxxxxxxx",
+      "appSecret": "your_app_secret",
+      "allowFrom": ["ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+    }
   }
 }
 ```
 
 ### feishu-claude-bridge（Windows）
 
-```yaml
-# config.yaml
-feishu:
-  app_id: cli_a9f8b2c3d4e5
-  app_secret: "your_app_secret"
-  allowed_users:
-    - ou_xxxxx
-    - ou_yyyyy
+```bash
+# config.env
+FEISHU_APP_ID=cli_xxxxxxxxxxxx
+FEISHU_APP_SECRET=your_app_secret
+CTI_FEISHU_REQUIRE_MENTION=true
 ```
 
 ---
@@ -536,7 +550,7 @@ const hasAllKeyword = msgText.includes('所有人')
 
 ```bash
 # Hermes Gateway（WSL）
-hermes gateway --profile my-agent --log-level debug
+hermes -p my-agent gateway run --log-level debug
 
 # OpenClaw Gateway（Windows）
 查看 logs/ 目录下的日志文件
@@ -694,6 +708,6 @@ Hermes Gateway / OpenClaw Gateway / feishu-claude-bridge 均可通过「post」�
 ## 相关资源
 
 - [Hermes Gateway 文档](https://hermes-agent.nousresearch.com/docs)
-- [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的网关
+- [OpenClaw 官方](https://github.com/openclaw/openclaw) — OpenClaw Gateway 主项目
+- [openclaw-feishu](https://github.com/AlexAnys/openclaw-feishu) — 飞书消息转发到 OpenClaw 的第三方网关
 - [Claude-to-IM](https://github.com/op7418/Claude-to-IM) — Claude Desktop 消息转发到 IM（飞书/微信等）
-- [Multi-Platform Bot Troubleshooting](devops/multi-platform-agent-troubleshooting/SKILL.md) — 集群级 Bot 故障排查（Hermes + OpenClaw 混合环境）

@@ -22,7 +22,7 @@
 |------|------|
 | `LICENSE` | MIT 许可证 |
 | `CHEATSHEET.md` | 星标知识点速查卡 |
-| `skills/devops/feishu-a2a-group-chat-setup/SKILL.md` | Hermes Agent 可加载 skill（v2.1），含触发条件、分步操作、全框架配置、快速排查、常见坑点 |
+| `SKILL.md` | 完整配置指南（v2.1），含触发条件、分步操作、全框架配置、快速排查、常见坑点 |
 | `.github/ISSUE_TEMPLATE/` | Issue 模板（提问题时自动收集环境信息） |
 
 ## 快速开始

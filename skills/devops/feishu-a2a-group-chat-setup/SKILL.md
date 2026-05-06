@@ -417,6 +417,91 @@ feishu:
 
 ---
 
+## Step 9：「所有人」全员唤醒配置
+
+### 背景
+
+飞书群聊中，飞书原生 @所有人 功能**不会触发 Bot 的消息事件**——Bot 无法感知到 @所有人。需要用以下方案让所有 Bot 响应全员消息。
+
+### 方案一：约定关键词「所有人」（推荐）
+
+群内发纯文字消息「所有人」（不带 @），所有 Bot 检测此关键词并视为被 @ 响应。
+
+**优势**：跨框架通用，不依赖飞书原生能力。
+
+### 方案二：飞书原生 @所有人 检测
+
+飞书原生 @所有人 在 post 富文本消息中渲染为 `@_all`（**不是**文字「所有人」）。各框架需检测 raw JSON 中的 `@_all` 字符串。
+
+### 各框架配置
+
+#### Hermes Gateway
+
+所有 profile 都需要配置：
+
+```bash
+# ~/.hermes/.env (系统助理 default)
+# ~/.hermes/profiles/touyan/.env (投研助理)
+# ~/.hermes/profiles/legal/.env (法务官)
+
+FEISHU_GROUP_POLICY=open
+FEISHU_REQUIRE_MENTION=true
+```
+
+| 配置项 | 作用 |
+|--------|------|
+| `FEISHU_GROUP_POLICY=open` | 绕过跨 App open_id 不匹配的 allowlist 问题 |
+| `FEISHU_REQUIRE_MENTION=true` | 安全门控——只有 @ 到或在 @所有人 时才响应 |
+
+Hermes 内置的 `_mentions_self` 方法**已自动检测** `@_all` in raw_content ✅
+
+#### feishu-claude-bridge（极客Claude + 科科Claude）
+
+**① 环境变量：**
+
+```bash
+# config.env (极客Claude) / config.keke.env (科科Claude)
+CTI_FEISHU_ENABLE_ALL_KEYWORD=true
+CTI_FEISHU_REQUIRE_MENTION=true
+```
+
+**② 代码修复（检测飞书原生 @所有人）：**
+
+文件 `src/feishu.ts` 约 line 898：
+
+```typescript
+const hasAllKeyword = msgText.includes('所有人') 
+  || rawContent.includes('@_all')   // 飞书原生 @所有人
+  || rawContent.includes('@所有人') // 兼容写法
+  || rawContent.includes('所有人');
+```
+
+> ⚠️ 修改后需 `esbuild` 重新编译并重启 daemon
+
+#### OpenClaw Gateway（龙虾 Jojo + 萃萃）
+
+⚠️ OpenClaw **暂不支持**「所有人」关键词检测，需后续开发。
+
+### 跨 App open_id 不匹配（重要）
+
+**根因**：飞书原生 @所有人 消息的 `sender_id.open_id` 是**当前 App 视角**的 open_id。如果 `allowed_users` 里用的是另一个 App 的 open_id，匹配失败，消息被静默丢弃。
+
+**解决**：
+- **Hermes**：`FEISHU_GROUP_POLICY=open` + `FEISHU_REQUIRE_MENTION=true` 组合（绕过校验但仍持门控）
+- **Bridge**：在 `@_all` 检测分支中直接 bypass require_mention 检查
+
+### 验证
+
+群聊中依次测试：
+
+| # | 测试 | 预期结果 |
+|---|------|---------|
+| 1 | 发飞书原生 @所有人 | 马系 + 极客系全部响应 |
+| 2 | 发约定关键词「所有人」 | 所有 Bot 响应（含开启全关键词的） |
+| 3 | @ 单个 Bot | 只有该 Bot 响应（不串台） |
+
+---
+
 ## 调试 & 排查
 
 ### Bot 不响应群 @消息
@@ -491,6 +576,7 @@ hermes gateway --profile my-agent --log-level debug
 - [ ] Bot-to-Bot 通信已启用（`config.yaml` 中 `respond_to_bots: true`）
 - [ ] 所有 profile 的 `.env` 都配置了 `FEISHU_ALLOW_BOTS`
 - [ ] 新加的群聊同时出现在 `group_chats` 和 `group_chat_allowlist` 两处白名单中
+- [ ] 「所有人」全员唤醒已配置（Hermes: `FEISHU_GROUP_POLICY=open`, Bridge: `CTI_FEISHU_ENABLE_ALL_KEYWORD=true`）
 
 ---
 

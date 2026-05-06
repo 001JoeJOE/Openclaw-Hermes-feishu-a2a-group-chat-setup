@@ -9,3 +9,4 @@
 ★ 多 Bot 协作必须关流式输出（如框架支持）。开着的后果：A Bot 的回复片段出现在 B Bot 的回复里，串台。
 ★ 以为"只有 Hermes Gateway 有这些问题"是最大的误区——OpenClaw 和 feishu-claude-bridge 一样会踩中飞书侧的权限和哑死坑。这不是框架问题，是飞书 Bot 开发的共性问题。
 ☆ 群 open_id ≠ DM open_id。同一个人/Bot 在群聊和私聊中是两个不同的 ID。
+★ 飞书原生 @所有人 对 Bot 无效——不会触发消息事件。需用约定关键词「所有人」或检测 raw JSON 中的 `@_all`。Hermes 已内置支持（`FEISHU_GROUP_POLICY=open` + `require_mention=true`），Bridge 需加代码检测 `rawContent.includes('@_all')`。OpenClaw 暂不支持。
